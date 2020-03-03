@@ -30,11 +30,21 @@ public class DriveSubsystem extends Subsystem {
   public static final double gearRatio = (50.0/13.0)/(50.0/30.0)/(24.0/30.0);
   public static final double Fudgefactor = 1.0; 
 
-
+//syed awase-> change this value to increase or decrease speed.
   public double speedMultiplyer = 1;
   public final double distanceperpulse = Math.PI*wheelDiameter/pulsePerRevolution /encoderGearRatio/gearRatio * Fudgefactor;
 
-  
+//syed awase
+private double leftSpeedSetpoint=0;
+private double rightSpeedSetpoint=0;
+
+private double leftSpeedValue=0;
+private double rightSpeedValue=0;
+ /** Max change in speed every 50th of a second 
+   *  Example: a slew rate of .04 will go from stop to full speed in 0.5 seconds */
+private static double SPEED_SLEW_RATE=0.04;
+
+
   public void CompressorControl(){
     c.setClosedLoopControl(true);    
   }
@@ -42,7 +52,8 @@ public class DriveSubsystem extends Subsystem {
   
   @Override
   public void initDefaultCommand() {
-    speedMultiplyer = .6;
+    //syedawase=> modified the value to 0.15 earlier it was 0.6
+    speedMultiplyer = .15;
     // Set the default command for a subsystem here.
     lefte.setPosition(0);
     righte.setPosition(0);
@@ -64,5 +75,48 @@ public class DriveSubsystem extends Subsystem {
     speed = speed*speedMultiplyer;
     tankDrive(speed-turn, speed+turn);
   }
+
+  public void updateDrive(){
+    left1.set(leftSpeedValue);
+    left2.set(leftSpeedValue);
+    left3.set(leftSpeedValue);
+    right1.set(-rightSpeedValue);
+    right2.set(-rightSpeedValue);
+    right3.set(-rightSpeedValue);
+  }
+
+  @Override
+  public void periodic() {
+	  
+	  // The periodic method is called every loop
+	  // Take a step toward the setpoint on each 
+	  // loop through
+	  if (Math.abs(leftSpeedSetpoint - leftSpeedValue) < SPEED_SLEW_RATE) {
+		  leftSpeedValue = leftSpeedSetpoint;
+	  }
+	  else {
+		  if (leftSpeedValue < leftSpeedSetpoint) {
+			  leftSpeedValue += SPEED_SLEW_RATE;
+		  }
+		  else {
+			  leftSpeedValue -= SPEED_SLEW_RATE;
+		  }
+	  }
+	  
+	  if (Math.abs(rightSpeedSetpoint - rightSpeedValue) < SPEED_SLEW_RATE) {
+		  rightSpeedValue = rightSpeedSetpoint;
+	  }
+	  else {
+		  if (rightSpeedValue < rightSpeedSetpoint) {
+			  rightSpeedValue += SPEED_SLEW_RATE;
+		  }
+		  else {
+			  rightSpeedValue -= SPEED_SLEW_RATE;
+		  }
+	  }
+	  
+	  updateDrive();
+  }
+
 
 }
